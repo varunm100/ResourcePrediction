@@ -19,7 +19,6 @@ def InitilizeModelFit(NumXpredict):
     m.fit(df)
     future = m.make_future_dataframe(periods=NumXpredict)
     forecast = m.predict(future)
-    #forecast[['ds','yhat','yhat_lower','yhat_upper']].tail()
     print(np.exp(forecast['yhat']).tail(NumXpredict))
     print(np.exp(forecast['yhat_lower']).tail(NumXpredict))
     print(np.exp(forecast['yhat_upper']).tail(NumXpredict))

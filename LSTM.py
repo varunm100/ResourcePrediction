@@ -15,12 +15,14 @@ import numpy as np
 from numpy import array
 import h5py
 
-XValPredict = [8.0,8.1,8.2,8.3,8.4,8.5,8.6]
+# XValPredict = [8.0,8.1,8.2,8.3,8.4,8.5,8.6]
+XValPredict = [214,215,216,217,218,219,220]
 XVal = []
 YVal = []
 MainSequence = []
-NumEpochs = 1000
 XValTemp = []
+NumEpochs = 1000
+BSize = 16
 
 def UpdateData():
 	FileData = open('LSTMData.txt', 'r').readlines()
@@ -44,6 +46,7 @@ def ParseTrain():
 	return X,y
 
 def ParseXVal():
+	XValPredict[:] = [(i - 134)*0.1 for i in XValPredict]
 	SeqCounter = []
 	for i in range(len(XValPredict)):
 		TempArr = []
@@ -58,7 +61,7 @@ def ParseXVal():
 
 def TrainModelASave():
 	model = Sequential()
-	model.add(LSTM(16, input_shape=(1,1)))
+	model.add(LSTM(BSize, input_shape=(1,1)))
 	model.add(Dense(1, activation='relu'))
 	model.compile(loss='mse', optimizer='adam')
 	X,y = ParseTrain()
@@ -67,11 +70,11 @@ def TrainModelASave():
 	print('Model Saved!')
 
 def LoadModelAPredict():
-	model = load_model('RNNModels/model3.h5')
+	model = load_model('RNNModels/model2.h5')
 	y = model.predict(ParseXVal(), verbose=0)
 	print(np.exp(y))
 
-UpdateData()
-GenerateSequence()
+#UpdateData()
+#GenerateSequence()
 #TrainModelASave()
 LoadModelAPredict()

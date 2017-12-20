@@ -14,15 +14,17 @@ from matplotlib import pyplot
 import numpy as np
 from numpy import array
 import h5py
+import glob
 
-# XValPredict = [8.0,8.1,8.2,8.3,8.4,8.5,8.6]
+#XValPredict = [8.0,8.1,8.2,8.3,8.4,8.5,8.6]
 XValPredict = [214,215,216,217,218,219,220]
 XVal = []
 YVal = []
 MainSequence = []
 XValTemp = []
 NumEpochs = 1000
-BSize = 16
+HiddenNuerons = 15
+BatchSize = 3
 
 def UpdateData():
 	FileData = open('LSTMData.txt', 'r').readlines()
@@ -56,25 +58,37 @@ def ParseXVal():
 	SeqCounter = array(SeqCounter)
 	X, y = SeqCounter[:, 0], SeqCounter[:, 1]
 	X = X.reshape((len(X), 1, 1))
-	print(X)
 	return X
 
 def TrainModelASave():
 	model = Sequential()
-	model.add(LSTM(BSize, input_shape=(1,1)))
+	model.add(LSTM(HiddenNuerons, return_sequences=True, input_shape=(1,1)))
+	model.add(LSTM(HiddenNuerons, return_sequences=True))
+	model.add(LSTM(HiddenNuerons))
 	model.add(Dense(1, activation='relu'))
-	model.compile(loss='mse', optimizer='adam')
+	model.compile(loss='logcosh', optimizer='adam')
 	X,y = ParseTrain()
-	model.fit(X, y, epochs=NumEpochs, shuffle=False, verbose=0)
-	model.save('RNNModels/model4.h5')
+	model.fit(X, y, epochs=NumEpochs, batch_size = BatchSize,shuffle=False, verbose=0)
+	model.save('RNNModels/model9.h5')
 	print('Model Saved!')
 
 def LoadModelAPredict():
-	model = load_model('RNNModels/model2.h5')
+	model = load_model('RNNModels/model5.h5')
 	y = model.predict(ParseXVal(), verbose=0)
 	print(np.exp(y))
 
-#UpdateData()
-#GenerateSequence()
-#TrainModelASave()
-LoadModelAPredict()
+def LoadAllModels():
+	FileNamePath = glob.glob("RNNModels/*.h5")
+	XValFormatted = ParseXVal()
+	for Path in FileNamePath:
+		print('-------------------')
+		model = load_model(Path)
+		print(Path)
+		print(np.exp(model.predict(XValFormatted, verbose=0)))
+		#print('\n')
+
+# UpdateData()
+# GenerateSequence()
+# TrainModelASave()
+#LoadModelAPredict()
+LoadAllModels()

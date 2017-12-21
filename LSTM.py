@@ -10,7 +10,7 @@ from keras.models import load_model
 from keras.layers import Dense
 from keras.layers import LSTM
 from math import sqrt
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy import array
 import h5py
@@ -20,17 +20,22 @@ import glob
 XValPredict = [214,215,216,217,218,219,220]
 XVal = []
 YVal = []
+XValPredictStatic = XValPredict
+XValStatic = []
+YValStatic = []
 MainSequence = []
 XValTemp = []
-NumEpochs = 1000
-HiddenNuerons = 15
-BatchSize = 3
+NumEpochs = 2000
+NumHiddenNuerons = 20
+BatchSize = 5
 
 def UpdateData():
 	FileData = open('LSTMData.txt', 'r').readlines()
 	for SingleLine in FileData:
 		XVal.append(float(SingleLine.split()[0]))
 		YVal.append(np.log(float(SingleLine.split()[1])))
+		XValStatic.append(float(SingleLine.split()[0]))
+		YValStatic.append(float(SingleLine.split()[1]))
 
 def GenerateSequence():
 	for i in range(len(XVal)):
@@ -62,33 +67,49 @@ def ParseXVal():
 
 def TrainModelASave():
 	model = Sequential()
-	model.add(LSTM(HiddenNuerons, return_sequences=True, input_shape=(1,1)))
-	model.add(LSTM(HiddenNuerons, return_sequences=True))
-	model.add(LSTM(HiddenNuerons))
+	model.add(LSTM(NumHiddenNuerons, return_sequences=True, input_shape=(1,1), activation='relu'))
+	model.add(LSTM(NumHiddenNuerons, return_sequences=True, activation='relu'))
+	model.add(LSTM(NumHiddenNuerons, activation='relu'))
 	model.add(Dense(1, activation='relu'))
-	model.compile(loss='logcosh', optimizer='adam')
+	model.compile(loss='logcosh', optimizer='sgd')
 	X,y = ParseTrain()
-	model.fit(X, y, epochs=NumEpochs, batch_size = BatchSize,shuffle=False, verbose=0)
-	model.save('RNNModels/model9.h5')
+	model.fit(X, y, epochs=NumEpochs, batch_size = BatchSize,shuffle=False, verbose=0, validation_split=0.05)
+	model.save('RNNModels/model11.h5')
 	print('Model Saved!')
 
 def LoadModelAPredict():
-	model = load_model('RNNModels/model5.h5')
+	model = load_model('RNNModels/model11.h5')
 	y = model.predict(ParseXVal(), verbose=0)
 	print(np.exp(y))
 
 def LoadAllModels():
-	FileNamePath = glob.glob("RNNModels/*.h5")
+	FileNamePath = glob.glob('RNNModels/*.h5')
 	XValFormatted = ParseXVal()
+	k = 0
 	for Path in FileNamePath:
+		k+=1
 		print('-------------------')
 		model = load_model(Path)
 		print(Path)
-		print(np.exp(model.predict(XValFormatted, verbose=0)))
-		#print('\n')
+		ModelResults = np.exp(model.predict(XValFormatted, verbose=0))
+		print(ModelResults)
+		print(model.summary())
+		print('NumLayers: ' + str(len(model.layers)))
+		#i = 0
+		# for layer in model.layers:
+		# 	i+=1
+		# 	print('--------')
+		# 	print('Layer ' + str(i))
+		# 	print(layer.get_config())
+		DeltaYd = np.ravel(ModelResults).tolist()
+		plt.subplot(2,5,k)
+		plt.plot(XValStatic+XValPredictStatic, YValStatic+DeltaYd)
+		plt.plot(XValPredictStatic, DeltaYd, color='red')
+		plt.subplot(2,5,k).set_title(str(Path))
+	plt.show()
 
-# UpdateData()
+UpdateData()
 # GenerateSequence()
 # TrainModelASave()
-#LoadModelAPredict()
+# LoadModelAPredict()
 LoadAllModels()

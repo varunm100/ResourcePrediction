@@ -10,14 +10,15 @@ from keras.models import load_model
 from keras.layers import Dense
 from keras.layers import LSTM
 from math import sqrt
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import array
 import h5py
 import glob
 
-#XValPredict = [8.0,8.1,8.2,8.3,8.4,8.5,8.6]
-XValPredict = [214,215,216,217,218,219,220]
+XValPredict = [214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230]
+#XValPredict = [218]
 XVal = []
 YVal = []
 XValPredictStatic = XValPredict
@@ -70,15 +71,16 @@ def TrainModelASave():
 	model.add(LSTM(NumHiddenNuerons, return_sequences=True, input_shape=(1,1), activation='relu'))
 	model.add(LSTM(NumHiddenNuerons, return_sequences=True, activation='relu'))
 	model.add(LSTM(NumHiddenNuerons, activation='relu'))
+	#model.add(Dropout(1, activation='relu'))
 	model.add(Dense(1, activation='relu'))
-	model.compile(loss='logcosh', optimizer='sgd')
+	model.compile(loss='logcosh', optimizer='adam')
 	X,y = ParseTrain()
-	model.fit(X, y, epochs=NumEpochs, batch_size = BatchSize,shuffle=False, verbose=0, validation_split=0.05)
+	model.fit(X, y, epochs=NumEpochs, batch_size = BatchSize,verbose=0)
 	model.save('RNNModels/model11.h5')
 	print('Model Saved!')
 
 def LoadModelAPredict():
-	model = load_model('RNNModels/model11.h5')
+	model = load_model('RNNModels/model9.h5')
 	y = model.predict(ParseXVal(), verbose=0)
 	print(np.exp(y))
 
@@ -95,17 +97,15 @@ def LoadAllModels():
 		print(ModelResults)
 		print(model.summary())
 		print('NumLayers: ' + str(len(model.layers)))
-		#i = 0
-		# for layer in model.layers:
-		# 	i+=1
-		# 	print('--------')
-		# 	print('Layer ' + str(i))
-		# 	print(layer.get_config())
 		DeltaYd = np.ravel(ModelResults).tolist()
 		plt.subplot(2,5,k)
-		plt.plot(XValStatic+XValPredictStatic, YValStatic+DeltaYd)
-		plt.plot(XValPredictStatic, DeltaYd, color='red')
+		plt.plot(XValStatic+XValPredictStatic, YValStatic+DeltaYd, color='blue', linewidth=3.0)
+		plt.plot(XValPredictStatic, DeltaYd, color='red', linewidth=3.0)
 		plt.subplot(2,5,k).set_title(str(Path))
+
+	bluePath = mpatches.Patch(color='blue', label='Original')
+	redPatch = mpatches.Patch(color='red', label='Predicted')
+	plt.legend(handles=[bluePath, redPatch],bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 	plt.show()
 
 UpdateData()
